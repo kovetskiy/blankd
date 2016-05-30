@@ -7,21 +7,21 @@
 tests:eval tree "$_request" \| tail -n+2
 tests:assert-no-diff stdout <<TREE
 ├── body
-│   ├── fields
-│   └── raw
+│   ├── raw
+│   └── values
 ├── cookies
 ├── headers
-│   ├── fields
-│   └── raw
+│   ├── raw
+│   └── values
 ├── host
 ├── _id
 ├── method
 ├── raw
 └── uri
-    ├── fields
     ├── path
     ├── query
-    └── raw
+    ├── raw
+    └── values
 
 3 directories, 13 files
 TREE

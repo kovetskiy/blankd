@@ -203,13 +203,13 @@ func getRequestDump(request *http.Request) (map[string]string, error) {
 		"uri/raw":        request.RequestURI,
 		"uri/path":       request.URL.Path,
 		"uri/query":      request.URL.RawQuery,
-		"uri/fields":     getFields(request.URL.Query(), "="),
+		"uri/values":     getValues(request.URL.Query(), "="),
 		"headers/raw":    string(headers.Bytes()),
-		"headers/fields": getFields(request.Header, "="),
+		"headers/values": getValues(request.Header, "="),
 		"cookies":        getCookies(request.Cookies()),
 		"body/raw":       string(body.Bytes()),
-		"body/fields":    getFields(request.Form, "="),
-		"raw": getURIHeader(request) + getFields(request.Header, ": ") +
+		"body/values":    getValues(request.Form, "="),
+		"raw": getURIHeader(request) + getValues(request.Header, ": ") +
 			"\n\n" + body.String(),
 	}
 
@@ -227,23 +227,23 @@ func getURIHeader(request *http.Request) string {
 }
 
 func getCookies(cookies []*http.Cookie) string {
-	var fields []string
+	var values []string
 	for _, cookie := range cookies {
-		fields = append(fields, cookie.String())
+		values = append(values, cookie.String())
 	}
 
-	sort.Strings(fields)
+	sort.Strings(values)
 
-	return strings.Join(fields, "\n")
+	return strings.Join(values, "\n")
 }
 
-func getFields(values map[string][]string, delimiter string) string {
-	fields := []string{}
-	for key, keyValues := range values {
+func getValues(raw map[string][]string, delimiter string) string {
+	values := []string{}
+	for key, keyValues := range raw {
 		for _, value := range keyValues {
-			fields = append(fields, key+delimiter+value)
+			values = append(values, key+delimiter+value)
 		}
 	}
-	sort.Strings(fields)
-	return strings.Join(fields, "\n")
+	sort.Strings(values)
+	return strings.Join(values, "\n")
 }

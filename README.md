@@ -36,14 +36,14 @@ every request with following structure:
 │   ├── raw      # raw request URI
 │   ├── path     # URI path without query
 │   ├── query    # URI query without path
-│   └── fields   # URI form fields in 'key=value' format
+│   └── values   # URI form values in 'key=value' format
 ├── headers
 │   ├── raw      # raw request headers
-│   └── fields   # request headers in 'key=value' format
+│   └── values   # request headers in 'key=value' format
 ├── cookies      # request cookies in 'key=value' format
 └── body
     ├── raw      # raw request body
-    └── fields   # request form fields in 'key=value' format
+    └── values   # request form values in 'key=value' format
 ```
 
   **blankd** will pass path to directory with request details as argument to
