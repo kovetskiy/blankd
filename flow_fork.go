@@ -30,12 +30,14 @@ var (
 
 type HTTPHandler struct {
 	program string
+	root    string
 }
 
 func forkFlow(args map[string]interface{}) {
 	var (
 		listenAddress = args["-l"].(string)
 		program       = args["-e"].(string)
+		rootDirectory = args["-d"].(string)
 		master        = os.Getppid()
 	)
 
@@ -56,6 +58,7 @@ func forkFlow(args map[string]interface{}) {
 	server := http.Server{
 		Handler: &HTTPHandler{
 			program: program,
+			root:    rootDirectory,
 		},
 	}
 
@@ -75,6 +78,7 @@ func (handler *HTTPHandler) ServeHTTP(
 			logger.Fatalf("PANIC: %s", err)
 		}
 	}()
+
 	path, err := handler.dumpRequest(request)
 	if err != nil {
 		logger.Fatal(err)
@@ -136,17 +140,17 @@ func (handler *HTTPHandler) ServeHTTP(
 func (handler *HTTPHandler) dumpRequest(
 	request *http.Request,
 ) (string, error) {
-	path, err := ioutil.TempDir(os.TempDir(), "soul")
+	dump, err := getRequestDump(request)
 	if err != nil {
 		return "", err
 	}
 
-	dir, err := getRequestDirData(request)
+	path, err := ioutil.TempDir(handler.root, dump["_id"])
 	if err != nil {
 		return "", err
 	}
 
-	for filename, contents := range dir {
+	for filename, contents := range dump {
 		fullpath := filepath.Join(path, filename)
 
 		err = os.MkdirAll(filepath.Dir(fullpath), 0755)
@@ -165,7 +169,7 @@ func (handler *HTTPHandler) dumpRequest(
 	return path, nil
 }
 
-func getRequestDirData(request *http.Request) (map[string]string, error) {
+func getRequestDump(request *http.Request) (map[string]string, error) {
 	hasher := md5.New()
 	hasher.Write([]byte(fmt.Sprint(time.Now().UnixNano())))
 	requestID := hex.EncodeToString(hasher.Sum(nil))
@@ -192,7 +196,7 @@ func getRequestDirData(request *http.Request) (map[string]string, error) {
 		return nil, err
 	}
 
-	dir := map[string]string{
+	dump := map[string]string{
 		"_id":            requestID,
 		"method":         strings.ToUpper(request.Method),
 		"host":           request.Host,
@@ -209,7 +213,7 @@ func getRequestDirData(request *http.Request) (map[string]string, error) {
 			"\n\n" + body.String(),
 	}
 
-	return dir, nil
+	return dump, nil
 }
 
 func getURIHeader(request *http.Request) string {

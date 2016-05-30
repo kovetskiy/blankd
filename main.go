@@ -68,6 +68,9 @@ Options:
     -l <address>  Listen specified address.
     -e <path>     Run specified program on every request.
     -o <path>     Output logs to specified file. [default: blankd.log]
+    -d <path>     Specify root directory to place directories with request
+                   details.
+				   [default: /tmp/]
     -h --help     Show this screen.
     --version     Show version.
 `
