@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "$@" > program_args
+if [[ -f response ]]; then
+    cat response
+fi

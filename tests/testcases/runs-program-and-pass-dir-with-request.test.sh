@@ -1,8 +1,29 @@
 #!/bin/bash
 
-tests:ensure :run -l :65002 -e /bin/true
-tests:assert-stdout-re '^\d+$'
+:run
 
-curl localhost:65002
+:request /
 
-tests:ensure kill -9 $(cat $(tests:get-stdout-file))
+tests:eval tree "$_request" \| tail -n+2
+tests:assert-no-diff stdout <<TREE
+├── body
+│   ├── fields
+│   └── raw
+├── cookies
+│   ├── fields
+│   └── raw
+├── headers
+│   ├── fields
+│   └── raw
+├── host
+├── _id
+├── method
+├── raw
+└── uri
+    ├── fields
+    ├── path
+    ├── query
+    └── raw
+
+4 directories, 14 files
+TREE
