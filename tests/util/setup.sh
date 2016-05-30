@@ -15,7 +15,7 @@ tests:clone util/program bin/
 
     _address="$(hostname):$port"
 
-    tests:ensure $BUILD -l "$_address" -e program -o logs
+    tests:ensure $BUILD -l "$_address" -e program -o /tmp/debug
     @var _process cat $(tests:get-stdout-file)
 }
 
@@ -30,8 +30,15 @@ tests:clone util/program bin/
     tests:put-string program_args ''
 
     tests:eval curl -sv -A "testcase" "$@" "http://$_address$uri" '2>&1'
-	tests:put request < \
-		<(cat $(tests:get-stdout-file) | sed -r '/^\* /d' | sed -r 's/^> //')
 
-	@var _request cat program_args
+    stdout_file=$(tests:get-stdout-file)
+    stdout=$(cat "$stdout_file")
+
+    local request=$(
+        echo "$stdout" | sed -r '/^[\*}{] /d' | sed -r 's/^[><] //'
+    )
+
+	tests:put-string request "$request"
+
+    _request=$(cat program_args)
 }

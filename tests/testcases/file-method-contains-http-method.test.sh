@@ -1,4 +1,4 @@
 :run
 
-:request / -X HEAD
-tests:assert-no-diff $_request/method HEAD
+:request / -X PUT
+tests:assert-no-diff $_request/method PUT

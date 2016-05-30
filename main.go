@@ -47,9 +47,7 @@ every request with following structure:
 ├── headers
 │   ├── raw      # raw request headers
 │   └── fields   # request headers in 'key=value' format
-├── cookies
-│   ├── raw      # raw request cookies value
-│   └── fields   # request cookies in 'key=value' format
+├── cookies      # request cookies in 'key=value' format
 └── body
     ├── raw      # raw request body
     └── fields   # request form fields in 'key=value' format

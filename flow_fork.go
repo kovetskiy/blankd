@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -71,6 +70,11 @@ func forkFlow(args map[string]interface{}) {
 func (handler *HTTPHandler) ServeHTTP(
 	response http.ResponseWriter, request *http.Request,
 ) {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Fatalf("PANIC: %s", err)
+		}
+	}()
 	path, err := handler.dumpRequest(request)
 	if err != nil {
 		logger.Fatal(err)
@@ -84,6 +88,7 @@ func (handler *HTTPHandler) ServeHTTP(
 			return
 		}
 
+		logger.Error(err)
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +96,7 @@ func (handler *HTTPHandler) ServeHTTP(
 	parts := strings.SplitN(string(stdout), "\n\n", 2)
 
 	var body string
-	if len(parts) > 0 {
+	if len(parts) == 2 {
 		body = parts[1]
 	}
 
@@ -110,16 +115,18 @@ func (handler *HTTPHandler) ServeHTTP(
 	}
 
 	if len(headers) > 0 {
-		statusMatches := reHeaderStatus.FindStringSubmatch(headers[0])
-		if len(statusMatches) != 0 {
-			code, err := strconv.Atoi(statusMatches[1])
-			if err != nil {
-				log.Fatal(err)
-			}
+		if headers[0] != "" {
+			statusMatches := reHeaderStatus.FindStringSubmatch(headers[0])
+			if len(statusMatches) != 0 {
+				code, err := strconv.Atoi(statusMatches[2])
+				if err != nil {
+					logger.Fatal(err)
+				}
 
-			response.WriteHeader(code)
-		} else {
-			logger.Fatalf("expected http status, but found: %s", statusMatches)
+				response.WriteHeader(code)
+			} else {
+				logger.Fatalf("expected http status, but found: '%s'", headers[0])
+			}
 		}
 	}
 
@@ -134,40 +141,9 @@ func (handler *HTTPHandler) dumpRequest(
 		return "", err
 	}
 
-	hasher := md5.New()
-	hasher.Write([]byte(fmt.Sprint(time.Now().UnixNano())))
-	requestID := hex.EncodeToString(hasher.Sum(nil))
-
-	var body bytes.Buffer
-	_, err = io.Copy(&body, request.Body)
+	dir, err := getRequestDirData(request)
 	if err != nil {
 		return "", err
-	}
-
-	err = request.ParseForm()
-	if err != nil {
-		return "", err
-	}
-
-	// I dunno why this missing
-	request.Header.Add("Host", request.Host)
-
-	dir := map[string]string{
-		"_id":            requestID,
-		"method":         strings.ToUpper(request.Method),
-		"host":           request.Host,
-		"uri/raw":        request.RequestURI,
-		"uri/path":       request.URL.RawPath,
-		"uri/query":      request.URL.RawQuery,
-		"uri/fields":     getFields(request.URL.Query(), "="),
-		"headers/raw":    getFields(request.Header, ": "),
-		"headers/fields": getFields(request.Header, "="),
-		"cookies/raw":    getCookiesRaw(request.Cookies()),
-		"cookies/fields": getCookiesFields(request.Cookies(), "="),
-		"body/raw":       body.String(),
-		"body/fields":    getFields(request.Form, "="),
-		"raw": getURIHeader(request) + getFields(request.Header, ": ") +
-			"\n\n" + body.String(),
 	}
 
 	for filename, contents := range dir {
@@ -189,6 +165,53 @@ func (handler *HTTPHandler) dumpRequest(
 	return path, nil
 }
 
+func getRequestDirData(request *http.Request) (map[string]string, error) {
+	hasher := md5.New()
+	hasher.Write([]byte(fmt.Sprint(time.Now().UnixNano())))
+	requestID := hex.EncodeToString(hasher.Sum(nil))
+
+	body := newBuffer(nil)
+
+	if request.Body != nil {
+		_, err := io.Copy(body, request.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		request.Body = newBuffer(body.Bytes())
+	}
+
+	err := request.ParseForm()
+	if err != nil {
+		return nil, err
+	}
+
+	var headers bytes.Buffer
+	err = request.Header.WriteSubset(&headers, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	dir := map[string]string{
+		"_id":            requestID,
+		"method":         strings.ToUpper(request.Method),
+		"host":           request.Host,
+		"uri/raw":        request.RequestURI,
+		"uri/path":       request.URL.Path,
+		"uri/query":      request.URL.RawQuery,
+		"uri/fields":     getFields(request.URL.Query(), "="),
+		"headers/raw":    string(headers.Bytes()),
+		"headers/fields": getFields(request.Header, "="),
+		"cookies":        getCookies(request.Cookies()),
+		"body/raw":       string(body.Bytes()),
+		"body/fields":    getFields(request.Form, "="),
+		"raw": getURIHeader(request) + getFields(request.Header, ": ") +
+			"\n\n" + body.String(),
+	}
+
+	return dir, nil
+}
+
 func getURIHeader(request *http.Request) string {
 	return fmt.Sprintf(
 		"%s %s HTTP/%d.%d\n",
@@ -199,20 +222,14 @@ func getURIHeader(request *http.Request) string {
 	)
 }
 
-func getCookiesFields(cookies []*http.Cookie, delimiter string) string {
+func getCookies(cookies []*http.Cookie) string {
 	var fields []string
 	for _, cookie := range cookies {
-		fields = append(fields, cookie.Name+delimiter+cookie.Value)
+		fields = append(fields, cookie.String())
 	}
-	sort.Strings(fields)
-	return strings.Join(fields, "\n")
-}
 
-func getCookiesRaw(cookies []*http.Cookie) string {
-	var fields []string
-	for _, cookie := range cookies {
-		fields = append(fields, cookie.Raw)
-	}
+	sort.Strings(fields)
+
 	return strings.Join(fields, "\n")
 }
 

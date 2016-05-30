@@ -7,6 +7,15 @@ package main
 #include <stdlib.h>
 */
 import "C"
+import "bytes"
+
+type buffer struct{ *bytes.Buffer }
+
+func newBuffer(data []byte) *buffer {
+	return &buffer{bytes.NewBuffer(data)}
+}
+
+func (*buffer) Close() error { return nil }
 
 func getMaxFD() int {
 	sc_open_max := C.sysconf(C._SC_OPEN_MAX)

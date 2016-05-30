@@ -10,8 +10,6 @@ tests:assert-no-diff stdout <<TREE
 │   ├── fields
 │   └── raw
 ├── cookies
-│   ├── fields
-│   └── raw
 ├── headers
 │   ├── fields
 │   └── raw
@@ -25,5 +23,5 @@ tests:assert-no-diff stdout <<TREE
     ├── query
     └── raw
 
-4 directories, 14 files
+3 directories, 13 files
 TREE
