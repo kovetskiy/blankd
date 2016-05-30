@@ -16,7 +16,7 @@ func masterFlow() {
 	process, err := os.StartProcess(
 		os.Args[0], append(os.Args),
 		&os.ProcAttr{
-			Env: append(os.Environ(), "HTTP_SOUL_MASTER=1"),
+			Env: append(os.Environ(), "BLANKD_FORK=1"),
 		},
 	)
 	if err != nil {

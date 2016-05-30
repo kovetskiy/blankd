@@ -15,7 +15,7 @@ tests:clone util/program bin/
 
     _address="$(hostname):$port"
 
-    tests:ensure $BUILD -l "$_address" -e program -o /tmp/debug
+    tests:ensure $BUILD -l "$_address" -e program
     @var _process cat $(tests:get-stdout-file)
 }
 
