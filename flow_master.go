@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 )
@@ -42,6 +41,5 @@ func masterFlow() {
 
 	fmt.Println(process.Pid)
 
-	http.PostForm("http://"+os.Args[2]+"/aa", map[string][]string{"a": []string{"x"}})
 	process.Release()
 }
