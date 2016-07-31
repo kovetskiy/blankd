@@ -15,7 +15,7 @@ tests:clone util/program bin/
 
     _address="$(hostname):$port"
 
-    tests:ensure $BUILD -l "$_address" -e program
+    tests:ensure $BUILD -l "$_address" -e program "$@"
     @var _process cat $(tests:get-stdout-file)
 }
 
@@ -27,9 +27,22 @@ tests:clone util/program bin/
     local uri="$1"
     shift
 
+    local tls=false
+    if [[ "$#" -ge "1" ]]; then
+        if [[ "$1" == "--tls" ]]; then
+            tls=true
+            shift
+        fi
+    fi
+
     tests:put-string program_args ''
 
-    tests:eval curl -sv -A "testcase" "$@" "http://$_address$uri" '2>&1'
+    local scheme="http://"
+    if $tls; then
+        scheme="https://"
+    fi
+
+    tests:eval curl -sv -A "testcase" "$@" "$scheme$_address$uri" '2>&1'
 
     stdout_file=$(tests:get-stdout-file)
     stdout=$(cat "$stdout_file")

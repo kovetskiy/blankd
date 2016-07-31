@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -38,14 +39,48 @@ func forkFlow(args map[string]interface{}) {
 		listenAddress = args["-l"].(string)
 		program       = args["-e"].(string)
 		rootDirectory = args["-d"].(string)
+		useTLS        = args["--tls"].(bool)
 		master        = os.Getppid()
 	)
 
-	logger.Debugf("starting listening at %s", listenAddress)
+	var listener net.Listener
+	var err error
+	if useTLS {
+		_, _, err := executil.Run(
+			exec.Command(
+				"openssl", "req", "-x509", "-newkey", "rsa:1024",
+				"-keyout", filepath.Join(rootDirectory, "tls.key"),
+				"-out", filepath.Join(rootDirectory, "tls.crt"),
+				"-days", "9999", "-nodes",
+				"-subj", "/C=US/ST=Denial/L=Springfield/O=Dis/CN=localhost",
+			),
+		)
+		if err != nil {
+			logger.Fatalf("can't generate tls certificate: %s", err)
+		}
 
-	listener, err := net.Listen("tcp", listenAddress)
-	if err != nil {
-		logger.Fatalf("can't listen: %s", err)
+		certificate, err := tls.LoadX509KeyPair(
+			filepath.Join(rootDirectory, "tls.crt"),
+			filepath.Join(rootDirectory, "tls.key"),
+		)
+		if err != nil {
+			logger.Fatalf("can't load certificate: %s", err)
+		}
+
+		logger.Debugf("starting listening at %s", listenAddress)
+
+		listener, err = tls.Listen("tcp", listenAddress, &tls.Config{
+			Certificates: []tls.Certificate{certificate},
+		})
+		if err != nil {
+			logger.Fatalf("can't listen: %s", err)
+		}
+	} else {
+		logger.Debugf("starting listening at %s", listenAddress)
+		listener, err = net.Listen("tcp", listenAddress)
+		if err != nil {
+			logger.Fatalf("can't listen: %s", err)
+		}
 	}
 
 	logger.Debugf("sending signal to %d", master)

@@ -60,7 +60,7 @@ specified program.
 http connections, output new process pid to stdout and exit with zero code.
 
 Usage:
-	blankd [options] -l <address> -e <path>
+	blankd [options] -l <address> -e <path> [-s]
 	blankd -h | --help
 	blankd --version
 
@@ -70,7 +70,8 @@ Options:
     -o <path>     Output logs to specified file. [default: blankd.log]
     -d <path>     Specify root directory to place directories with request
                    details.
-				   [default: /tmp/]
+                   [default: /tmp/]
+    -s --tls      Use TLS encryption.
     -h --help     Show this screen.
     --version     Show version.
 `
