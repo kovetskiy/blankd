@@ -3,18 +3,28 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 )
 
 func masterFlow() {
+	var err error
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, ListeningStartedSignal)
 
 	logger.Debugf("starting fork process")
 
+	path := os.Args[0]
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		path, err = exec.LookPath(os.Args[0])
+		if err != nil {
+			logger.Fatalf("can't find blankd binary '%s': %s", os.Args[0], err)
+		}
+	}
+
 	process, err := os.StartProcess(
-		os.Args[0], append(os.Args),
-		&os.ProcAttr{
+		path, os.Args, &os.ProcAttr{
 			Env: append(os.Environ(), "BLANKD_FORK=1"),
 		},
 	)
