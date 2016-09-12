@@ -20,7 +20,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kovetskiy/executil"
+	"github.com/reconquest/executil-go"
 )
 
 var (

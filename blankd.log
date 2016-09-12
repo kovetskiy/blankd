@@ -1,0 +1,13 @@
+master: DEBUG: 2016-07-31 18:46:55 starting fork process
+master: DEBUG: 2016-07-31 18:46:55 fork pid = 1035
+master: DEBUG: 2016-07-31 18:46:55 waiting for signal 10
+fork:   DEBUG: 2016-07-31 18:46:55 starting listening at 127.0.0.1:9000
+fork:   FATAL: 2016-07-31 18:46:55 can't listen: listen tcp 127.0.0.1:9000: bind: address already in use
+master: FATAL: 2016-07-31 18:46:55 fork process unexpectedly exited: exit status 1
+master: DEBUG: 2016-07-31 18:47:03 starting fork process
+master: DEBUG: 2016-07-31 18:47:03 fork pid = 5395
+master: DEBUG: 2016-07-31 18:47:03 waiting for signal 10
+fork:   DEBUG: 2016-07-31 18:47:03 starting listening at 127.0.0.1:9000
+fork:   DEBUG: 2016-07-31 18:47:03 sending signal to 5385
+fork:   DEBUG: 2016-07-31 18:47:03 serving connections
+master: DEBUG: 2016-07-31 18:47:03 got signal 10
